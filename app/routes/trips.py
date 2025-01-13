@@ -2,7 +2,7 @@ import os
 import json
 import pytz
 from datetime import datetime
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
 from app.routes.Chater import extract_info
 from google.cloud.firestore_v1 import SERVER_TIMESTAMP
 from openai import OpenAI
@@ -181,3 +181,52 @@ def get_trips(destination: str):
     docs = trips_ref.where("destination", "==", destination).stream()
     trips = [doc.to_dict() for doc in docs]
     return {"trips": trips}
+
+@router.get("/filter-trips")
+async def filter_trips(
+    kierunek_kraj: str = Query(None, description="Destination country"),
+    kierunek_miasto: str = Query(None, description="Destination city (optional)"),
+    odlot_data_from: str = Query(None, description="Departure date from (YYYY-MM-DD)"),
+    odlot_data_to: str = Query(None, description="Departure date to (YYYY-MM-DD)"),
+    cena_max: int = Query(None, description="Maximum price"),
+):
+    """
+    Endpoint to filter trips from Firestore database. 
+    The city (kierunek_miasto) is optional.
+    """
+    trips_ref = db.collection("Wycieczki")
+    query = trips_ref
+
+    try:
+        # Apply filters dynamically
+        if kierunek_kraj:
+            query = query.where("Kierunek_Kraj", "==", kierunek_kraj)
+        if kierunek_miasto:
+            logger.debug("Applying city filter: %s", kierunek_miasto)
+            query = query.where("Kierunek_Miasto", "==", kierunek_miasto)
+
+        if odlot_data_from:
+            from_date = convert_to_firestore_date(odlot_data_from)
+            query = query.where("Odlot_Data", ">=", from_date)
+        if odlot_data_to:
+            to_date = convert_to_firestore_date(odlot_data_to)
+            query = query.where("Odlot_Data", "<=", to_date)
+        if cena_max:
+            query = query.where("Cena", "<=", cena_max)
+
+        # Debug log for query filters
+        logger.debug("Filters applied: country=%s, city=%s, from_date=%s, to_date=%s, max_price=%s",
+                     kierunek_kraj, kierunek_miasto, odlot_data_from, odlot_data_to, cena_max)
+
+        # Execute query and fetch results
+        results = query.stream()
+        trips = [doc.to_dict() for doc in results]
+
+        if not trips:
+            return {"message": "No trips match your criteria."}
+
+        return {"trips": trips}
+
+    except Exception as e:
+        logger.error("Error in filter-trips endpoint: %s", str(e))
+        raise HTTPException(status_code=500, detail="An error occurred while filtering trips.")
