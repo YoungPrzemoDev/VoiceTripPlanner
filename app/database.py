@@ -3,7 +3,10 @@ from firebase_admin import credentials, firestore, auth
 from fastapi import HTTPException
 
 # Konfiguracja Firebase
-cred = credentials.Certificate("C:\\Users\\Przemo\\Documents\\9_sem\\SWP\\Projekt\\VoiceTripPlanner\\voicetripplanner-firebase-adminsdk-f60i8-35e8068ee3.json")
+try:
+    cred = credentials.Certificate("app/credentials/voicetripplanner-66dba-firebase-adminsdk-ads5q-2a03487b09.json")
+except: 
+    print("asd")
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
