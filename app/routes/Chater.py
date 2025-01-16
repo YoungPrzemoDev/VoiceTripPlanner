@@ -75,15 +75,15 @@ def first_encounter(text: str):
                 You are looking and extracting key information from the text provided by the user.
 
                 Extract the following:
-                1. **Price**: Should only be a number, without any words or currency symbols. If not mentioned, return "None".
-                2. **Country Destination**: Only real countries (e.g., Poland, France). If not mentioned, return "None".
-                3. **City Destination**: The specific city mentioned in the destination. If not mentioned, return "None".
-                4. **Departure Date**: The starting date for the trip, provided in the format DD/MM/YY. If not mentioned, return "None".
-                5. **Return Date**: The ending date for the trip, provided in the format DD/MM/YY. If not mentioned, return "None".
-                6. **Departure City**: The city where the user wants to depart from. If not mentioned, return "None".
-                7. **Baggage**: Whether the user is taking baggage. Format should be True/False. If not mentioned, return "None".
-                8. **Number of Baggage**: The number of baggage items, given as a number (e.g., 1, 2, 3). If not mentioned, return "None".
-                9. **Tags**: Keywords or phrases describing the trip type, such as "sightseeing", "ciepłe kraje" (warm countries), "może góry" (maybe mountains). If not mentioned, return "None".
+                1. **Price**: Should only be a number, without any words or currency symbols. If not mentioned, return "null".
+                2. **Country Destination**: Only real countries (e.g., Poland, France). If not mentioned, return "null".
+                3. **City Destination**: The specific city mentioned in the destination. If not mentioned, return "null".
+                4. **Departure Date**: The starting date for the trip, provided in the format DD/MM/YY. If not mentioned, return "01/01/01".
+                5. **Return Date**: The ending date for the trip, provided in the format DD/MM/YY. If not mentioned, return "01/01/01".
+                6. **Departure City**: The city where the user wants to depart from. If not mentioned, return "null".
+                7. **Baggage**: Whether the user is taking baggage. Format should be True/False. If not mentioned, return "null".
+                8. **Number of Baggage**: The number of baggage items, given as a number (e.g., 1, 2, 3). If not mentioned, return "null".
+                9. **Tags**: Keywords or phrases describing the trip type, such as "sightseeing", "ciepłe kraje" (warm countries), "może góry" (maybe mountains). If not mentioned, return "null".
 
                 Return the response in a JSON format like this:
                 {{
@@ -186,15 +186,15 @@ def second_encounter(text: str):
                 the user provides and identify any changes the user wants to make to their preferences or trip details.
 
                 Extract the following:
-                1. **Price**: Should only be a number, without any words or currency symbols. If not mentioned, return "None".
-                2. **Country Destination**: Only real countries (e.g., Poland, France). If not mentioned, return "None".
-                3. **City Destination**: The specific city mentioned in the destination. If not mentioned, return "None".
-                4. **Departure Date**: The starting date for the trip, provided in the format DD/MM/YY. If not mentioned, return "None".
-                5. **Return Date**: The ending date for the trip, provided in the format DD/MM/YY. If not mentioned, return "None".
-                6. **Departure City**: The city where the user wants to depart from. If not mentioned, return "None".
-                7. **Baggage**: Whether the user is taking baggage. Format should be True/False. If not mentioned, return "None".
-                8. **Number of Baggage**: The number of baggage items, given as a number (e.g., 1, 2, 3). If not mentioned, return "None".
-                9. **Tags**: Keywords or phrases describing the trip type, such as "sightseeing", "ciepłe kraje" (warm countries), "może góry" (maybe mountains). If not mentioned, return "None".
+                1. **Price**: Should only be a number, without any words or currency symbols. If not mentioned, return "null".
+                2. **Country Destination**: Only real countries (e.g., Poland, France). If not mentioned, return "null".
+                3. **City Destination**: The specific city mentioned in the destination. If not mentioned, return "null".
+                4. **Departure Date**: The starting date for the trip, provided in the format DD/MM/YY. If not mentioned, return "01/01/01".
+                5. **Return Date**: The ending date for the trip, provided in the format DD/MM/YY. If not mentioned, "01/01/01".
+                6. **Departure City**: The city where the user wants to depart from. If not mentioned, return "null".
+                7. **Baggage**: Whether the user is taking baggage. Format should be True/False. If not mentioned, return "null".
+                8. **Number of Baggage**: The number of baggage items, given as a number (e.g., 1, 2, 3). If not mentioned, return "null".
+                9. **Tags**: Keywords or phrases describing the trip type, such as "sightseeing", "ciepłe kraje" (warm countries), "może góry" (maybe mountains). If not mentioned, return "null".
 
                 Return the response in a JSON format like this:
                 {{
@@ -211,7 +211,7 @@ def second_encounter(text: str):
                     }}
                 }}
 
-                If any value is not provided in the user's input, return "None" for that field.
+                If any value is not provided in the user's input, return "null" for that field.
 
                 HERE IS TEXT FROM USER:
                 {text}

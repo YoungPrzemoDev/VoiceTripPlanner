@@ -62,19 +62,20 @@ def validate_extracted_info(info):
 import google.api_core.exceptions
 
 def filter_trips(db, extracted_info: dict):
-    trips_ref = db.collection('trips')
+    trips_ref = db.collection('Wycieczki')
     query = trips_ref
 
     try:
-        # Apply destination filter
-        if "destination" in extracted_info and extracted_info["destination"]:
-            query = query.where("destination", "==", extracted_info["destination"])
 
-        # Apply price filter
+        if "destination_country" in extracted_info and extracted_info["destination_country"]:
+            query = query.where("destination_country", "==", extracted_info["destination_country"])
+            
+        if "destination_city" in extracted_info and extracted_info["destination_city"]:
+            query = query.where("destination_city", "==", extracted_info["destination_city"])
+
         if "price" in extracted_info and extracted_info["price"]:
             query = query.where("price", "<=", float(extracted_info["price"]))
 
-        # Apply date filters
         if "available_time" in extracted_info:
             available_time = extracted_info["available_time"]
             from_date = available_time.get("from")
@@ -85,11 +86,17 @@ def filter_trips(db, extracted_info: dict):
             if to_date:
                 query = query.where("return_date", "<=", convert_to_firestore_date(to_date))
 
-        # Execute the query
+        if "tags" in extracted_info and extracted_info["tags"]:
+            tags = extracted_info["tags"]
+            for tag in tags:
+                query = query.where("tags", "array_contains", tag)
+
+        
+        
         results = query.stream()
-        trips = [doc.to_dict() for doc in results]
-        logger.debug("Filtered trips: %s", trips)
-        return trips
+        Wycieczki = [doc.to_dict() for doc in results]
+        logger.debug("Filtered Wycieczki: %s", Wycieczki)
+        return Wycieczki
 
     except google.api_core.exceptions.FailedPrecondition as e:
         # Handle Firestore index-related errors
@@ -111,10 +118,21 @@ def filter_trips(db, extracted_info: dict):
 @router.post("/search-trips")
 async def search_trips(text: str):
     try:
-
+        # Step 1: Extract information from user input
         extracted_info = first_encounter(text)
+        logger.debug("Extracted Info: %s", extracted_info)
 
-        return extracted_info
+        # Step 2: Validate and clean the extracted information
+        validate_extracted_info(extracted_info)
+
+        # Step 3: Filter trips in Firestore based on the extracted information
+        filtered_trips = filter_trips(db, extracted_info)
+
+        # Step 4: Return filtered trips or a message if none are found
+        if not filtered_trips:
+            return {"message": "No trips found matching your criteria."}
+
+        return {"Wycieczki": filtered_trips}
     except ValueError as e:
         logger.error("Validation error: %s", str(e))
         return {"error": str(e)}
