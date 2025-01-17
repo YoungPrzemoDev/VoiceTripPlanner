@@ -78,8 +78,8 @@ def first_encounter(text: str):
                 1. **Price**: Should only be a number, without any words or currency symbols. If not mentioned, return "null".
                 2. **Country Destination**: Only real countries (e.g., Poland, France). If not mentioned, return "null".
                 3. **City Destination**: The specific city mentioned in the destination. If not mentioned, return "null".
-                4. **Departure Date**: The starting date for the trip, provided in the format DD/MM/YY. If not mentioned, return "01/01/01".
-                5. **Return Date**: The ending date for the trip, provided in the format DD/MM/YY. If not mentioned, return "01/01/01".
+                4. **Departure Date**: The starting date for the trip, provided in the format DD/MM/YY. If any of it not mentioned, return for day - 01, for month - 01 and year 2025.
+                5. **Return Date**: The ending date for the trip, provided in the format DD/MM/YY. If not mentioned, return for day - 01, for month - 12 and year 2025.
                 6. **Departure City**: The city where the user wants to depart from. If not mentioned, return "null".
                 7. **Baggage**: Whether the user is taking baggage. Format should be True/False. If not mentioned, return "null".
                 8. **Number of Baggage**: The number of baggage items, given as a number (e.g., 1, 2, 3). If not mentioned, return "null".
@@ -170,56 +170,64 @@ def ask_user(text: str):
         logger.error("Error during OpenAI API call: %s", str(e))
         raise ValueError("Error occurred while processing the OpenAI request.")
     
-def second_encounter(text: str):
+def second_encounter(text: str, existing_preferences: dict):
     try:
-        client = OpenAI(
-            api_key=os.environ.get("OPEN_AI_API_KEY"),
-        )
+        client = OpenAI(api_key=os.environ.get("OPEN_AI_API_KEY"))
 
+        # Format available_time properly in the existing preferences
+        available_time = existing_preferences.get("available_time", {})
+        from_date = available_time.get("from", "null")
+        to_date = available_time.get("to", "null")
+
+        # Build the prompt with the correctly formatted `available_time`
+        prompt = f"""
+        Hello, you are a travel agency consultant. Your task is to extract key information from the user's input
+        about their travel preferences. Some preferences might already exist, and your job is to identify if the user
+        wants to change, add, or keep the existing values.
+
+        Here are the existing values (if any):
+        {json.dumps(existing_preferences)}
+        
+        Your task is to:
+        1. Keep the existing values unless the user explicitly mentions a change or provides new preferences.
+        2. Update or add information where the user specifies changes or new values.
+        3. Do not replace valid existing values with "null" unless the user explicitly states that they should be removed.
+
+        Extract the following details from the user's input:
+        - **Price**: Should only be a number, without any words or currency symbols.
+        - **Country Destination**
+        - **City Destination**
+        - **Departure Date**
+        - **Return Date**
+        - **Departure City**
+        - **Baggage**
+        - **Number of Baggage**
+        - **Tags**
+
+        Return only the updated JSON object, e.g.:
+        {{
+            "destination_country": "example",
+            "destination_city": "example",
+            "price": "example",
+            "departure_city": "example",
+            "baggage": "example",
+            "number_of_baggage": "example",
+            "tags": ["example1", "example2"],
+            "available_time": {{
+                "from": "example",
+                "to": "example"
+            }}
+        }}
+
+        HERE IS TEXT FROM USER:
+        {text}
+        """
+
+        # Send the prompt to OpenAI
         chat_completion = client.chat.completions.create(
-            messages=[
-                {
-                    "role": "user",
-                    "content": f"""
-                Hello, you are a travel agency consultant, and your task is to extract key information that
-                the user provides and identify any changes the user wants to make to their preferences or trip details.
-
-                Extract the following:
-                1. **Price**: Should only be a number, without any words or currency symbols. If not mentioned, return "null".
-                2. **Country Destination**: Only real countries (e.g., Poland, France). If not mentioned, return "null".
-                3. **City Destination**: The specific city mentioned in the destination. If not mentioned, return "null".
-                4. **Departure Date**: The starting date for the trip, provided in the format DD/MM/YY. If not mentioned, return "01/01/01".
-                5. **Return Date**: The ending date for the trip, provided in the format DD/MM/YY. If not mentioned, "01/01/01".
-                6. **Departure City**: The city where the user wants to depart from. If not mentioned, return "null".
-                7. **Baggage**: Whether the user is taking baggage. Format should be True/False. If not mentioned, return "null".
-                8. **Number of Baggage**: The number of baggage items, given as a number (e.g., 1, 2, 3). If not mentioned, return "null".
-                9. **Tags**: Keywords or phrases describing the trip type, such as "sightseeing", "ciepłe kraje" (warm countries), "może góry" (maybe mountains). If not mentioned, return "null".
-
-                Return the response in a JSON format like this:
-                {{
-                    "destination_country": "<country>",
-                    "destination_city": "<city>",
-                    "price": "<price>",
-                    "departure_city": "<departure_city>",
-                    "baggage": "<baggage>",
-                    "number_of_baggage": "<number>",
-                    "tags": ["<tag1>", "<tag2>", ...],
-                    "available_time": {{
-                        "from": "<start_date>",
-                        "to": "<end_date>"
-                    }}
-                }}
-
-                If any value is not provided in the user's input, return "null" for that field.
-
-                HERE IS TEXT FROM USER:
-                {text}
-                    """,
-                }
-            ],
+            messages=[{"role": "user", "content": prompt}],
             model="gpt-4o-mini",
         )
-
         raw_response = chat_completion.choices[0].message.content
         logger.debug("Raw OpenAI response: %s", raw_response)
 
@@ -236,19 +244,6 @@ def second_encounter(text: str):
         logger.error("Error during OpenAI API call: %s", str(e))
         raise ValueError("Error occurred while processing the OpenAI request.")
 
-# if __name__ == "__main__":
-#     try:
-#         user_text = "Chcę lecieć do ciepłych krajów w maju, najlepiej od 10 do 20. Mój budżet to 3000 złotych. Nie będę brał bagażu"
-#         extracted_info = extract_info(user_text)  # Call the function with user_text
-#         print("Extracted Information:", extracted_info)  # Print the extracted information
-        
-#         konsultatnt = extract_info_from_another_asks(extracted_info)
-#         print(konsultatnt)
-        
-#         user_answer = "chce zmienić budzet do 5000 złotych i wezme 2 bagaże"
-#         doprecyzowanie = extract_info_from_third_ask(user_answer)
-#     except Exception as e:
-#         print("An error occurred:", str(e))
 
 
 

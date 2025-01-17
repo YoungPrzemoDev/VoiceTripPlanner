@@ -10,7 +10,7 @@ from app.database import db
 from app.models import Trip, VoiceCommand
 import logging
 import google.api_core.exceptions
-
+from typing import Dict
 
 
 # Set up logging for debugging
@@ -19,6 +19,9 @@ logger = logging.getLogger(__name__)
 
 # Initialize FastAPI router
 router = APIRouter()
+
+# Global storage for the single user's preferences
+user_preferences = {}
 
 
 def convert_to_firestore_date(date_str: str) -> datetime:
@@ -36,11 +39,14 @@ def convert_to_firestore_date(date_str: str) -> datetime:
 def validate_extracted_info(info):
     # Clean and validate price
     if "price" in info:
-        price_str = info["price"]
-        if price_str and price_str.strip().isdigit():  # Check if price is a valid number
-            info["price"] = float(price_str.strip())
+        price_value = info["price"]
+        if isinstance(price_value, (float, int)):  # Already a valid number
+            info["price"] = float(price_value)
+        elif isinstance(price_value, str) and price_value.strip().isdigit():  # String containing digits
+            info["price"] = float(price_value.strip())
         else:
             info["price"] = None  # Set to None if invalid or missing
+
 
     # Validate available_time
     if "available_time" in info:
@@ -149,6 +155,10 @@ async def search_trips(text: str):
 
         # Step 2: Validate and clean the extracted information
         validate_extracted_info(extracted_info)
+        
+        global user_preferences
+        user_preferences = extracted_info
+        logger.debug("Saved preferences: %s", user_preferences)
 
         # Step 3: Filter trips in Firestore based on the extracted information
         filtered_trips = filter_trips(db, extracted_info)
@@ -183,12 +193,36 @@ async def search_trips(text: str):
     
 
 @router.post("/changer")
-async def search_trips(text: str):
+async def change_trip_filter(text: str):
+    """
+    Modify trip preferences and filter trips accordingly.
+    """
     try:
-        # Extract information from the user's text
-        extracted_info = second_encounter(text)
+        # Step 1: Retrieve the existing preferences
+        global user_preferences
+        if not user_preferences:
+            return {"error": "No preferences found. Please search for trips first."}
+        logger.debug("Existing preferences: %s", user_preferences)
 
-        return extracted_info
+        # Step 2: Extract changes to the filtering criteria from the user's text
+        extracted_info = second_encounter(text, user_preferences)
+        logger.debug("Extracted Info for changes: %s", extracted_info)
+
+        # Step 3: Validate and clean the extracted information
+        validate_extracted_info(extracted_info)
+
+        # Step 4: Save the updated preferences
+        user_preferences = extracted_info
+        logger.debug("Updated preferences: %s", user_preferences)
+
+        # Step 5: Apply the updated criteria to filter trips in Firestore
+        filtered_trips = filter_trips(db, extracted_info)
+
+        # Step 6: Return filtered trips or a message if none are found
+        if not filtered_trips:
+            return {"message": "No trips found matching the updated criteria."}
+
+        return {"Wycieczki": filtered_trips}
     except ValueError as e:
         logger.error("Validation error: %s", str(e))
         return {"error": str(e)}
