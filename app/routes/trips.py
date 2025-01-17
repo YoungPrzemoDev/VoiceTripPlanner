@@ -24,10 +24,13 @@ router = APIRouter()
 def convert_to_firestore_date(date_str: str) -> datetime:
     try:
         # Parse the date string in the format DD/MM/YY
-        return datetime.strptime(date_str, "%d/%m/%y")
+        naive_datetime = datetime.strptime(date_str, "%d/%m/%y")
+        # Make it offset-aware by assigning UTC timezone
+        return pytz.utc.localize(naive_datetime)
     except ValueError:
         logger.error("Invalid date format: %s. Expected DD/MM/YY.", date_str)
         raise ValueError(f"Invalid date format: {date_str}. Expected DD/MM/YY.")
+
 
 
 def validate_extracted_info(info):
@@ -63,54 +66,76 @@ import google.api_core.exceptions
 
 def filter_trips(db, extracted_info: dict):
     trips_ref = db.collection('Wycieczki')
-    query = trips_ref
 
     try:
+        # Fetch all trips
+        results = trips_ref.stream()
+        all_trips = [doc.to_dict() for doc in results]
+        logger.debug("Fetched all trips: %s", all_trips)
 
-        if "destination_country" in extracted_info and extracted_info["destination_country"]:
-            query = query.where("destination_country", "==", extracted_info["destination_country"])
-            
-        if "destination_city" in extracted_info and extracted_info["destination_city"]:
-            query = query.where("destination_city", "==", extracted_info["destination_city"])
+        # Apply local filtering
+        def matches_filters(trip):
+            # Filter by destination country
+            if "destination_country" in extracted_info:
+                destination_country = extracted_info["destination_country"]
+                if destination_country and destination_country.lower() != "null":
+                    if trip.get("destination_country", "").strip() != destination_country.strip():
+                        return False
 
-        if "price" in extracted_info and extracted_info["price"]:
-            query = query.where("price", "<=", float(extracted_info["price"]))
+            # Filter by destination city
+            if "destination_city" in extracted_info:
+                destination_city = extracted_info["destination_city"]
+                if destination_city and destination_city.lower() != "null":
+                    if trip.get("destination_city", "").strip() != destination_city.strip():
+                        return False
 
-        if "available_time" in extracted_info:
-            available_time = extracted_info["available_time"]
-            from_date = available_time.get("from")
-            to_date = available_time.get("to")
+            # Filter by departure city
+            if "departure_city" in extracted_info:
+                departure_city = extracted_info["departure_city"]
+                if departure_city and departure_city.lower() != "null":
+                    if trip.get("departure_city", "").strip() != departure_city.strip():
+                        return False
 
-            if from_date:
-                query = query.where("departure_date", ">=", convert_to_firestore_date(from_date))
-            if to_date:
-                query = query.where("return_date", "<=", convert_to_firestore_date(to_date))
+            # Filter by price
+            if "price" in extracted_info:
+                price = extracted_info["price"]
+                if price and price != "null":
+                    max_price = float(price)
+                    if trip.get("price", float('inf')) > max_price:
+                        return False
 
-        if "tags" in extracted_info and extracted_info["tags"]:
-            tags = extracted_info["tags"]
-            for tag in tags:
-                query = query.where("tags", "array_contains", tag)
+            # Filter by available time
+            if "available_time" in extracted_info:
+                available_time = extracted_info["available_time"]
+                from_date = available_time.get("from")
+                to_date = available_time.get("to")
 
-        
-        
-        results = query.stream()
-        Wycieczki = [doc.to_dict() for doc in results]
-        logger.debug("Filtered Wycieczki: %s", Wycieczki)
-        return Wycieczki
+                if from_date:
+                    if trip.get("departure_date") < convert_to_firestore_date(from_date):
+                        return False
+                if to_date:
+                    if trip.get("return_date") > convert_to_firestore_date(to_date):
+                        return False
 
-    except google.api_core.exceptions.FailedPrecondition as e:
-        # Handle Firestore index-related errors
-        if "requires an index" in str(e):
-            logger.error("The query requires a Firestore index. Please create it in the Firebase Console.")
-            return {
-                "error": "The query requires a Firestore index. Please check the Firebase Console for details.",
-                "index_creation_link": str(e).split("https://")[1]  # Extract the link to create the index
-            }
-        raise  # Re-raise other exceptions
+            # Filter by tags
+            if "tags" in extracted_info:
+                tags = extracted_info["tags"]
+                valid_tags = [tag.strip() for tag in tags if tag.lower() != "null"]
+                if valid_tags:
+                    trip_tags = trip.get("tags", [])
+                    if not set(valid_tags).intersection(trip_tags):
+                        return False
+
+            return True
+
+        # Filter trips locally
+        filtered_trips = [trip for trip in all_trips if matches_filters(trip)]
+        logger.debug("Filtered trips: %s", filtered_trips)
+        return filtered_trips
+
     except Exception as e:
-        logger.error("Unexpected error during Firestore query: %s", str(e))
+        logger.error("Unexpected error during local filtering: %s", str(e))
         raise
-
 
 
 

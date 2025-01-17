@@ -100,7 +100,6 @@ def first_encounter(text: str):
                     }}
                 }}
 
-                If any value is not provided in the user's input, return "None" for that field.
 
                 HERE IS TEXT FROM USER:
                 {text}
