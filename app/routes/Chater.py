@@ -194,11 +194,11 @@ def second_encounter(text: str, existing_preferences: dict):
         3. Do not replace valid existing values with "null" unless the user explicitly states that they should be removed.
 
         Extract the following details from the user's input:
-        - **Price**: Should only be a number, without any words or currency symbols.
+        - **Price**: Should only be a number, without any words or currency symbols and.
         - **Country Destination**
         - **City Destination**
-        - **Departure Date**
-        - **Return Date**
+        - **Departure Date**:The starting date for the trip, provided in the format DD/MM/YY. If any of it not mentioned, return for day - 01, for month - 01 and year 2025.
+        - **Return Date**:The ending date for the trip, provided in the format DD/MM/YY. If not mentioned, return for day - 01, for month - 12 and year 2025.
         - **Departure City**
         - **Baggage**
         - **Number of Baggage**
