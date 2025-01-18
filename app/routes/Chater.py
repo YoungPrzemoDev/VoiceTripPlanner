@@ -72,7 +72,7 @@ def first_encounter(text: str):
                 "role": "user",
                 "content": f"""
                 Hello, you are a travel agency consultant, and you are searching in the provided text for key words.
-                You are looking and extracting key information from the text provided by the user.
+                You are looking and extracting key information from the text provided by the user. Everything in polish language
 
                 Extract the following:
                 1. **Price**: Should only be a number, without any words or currency symbols. If not mentioned, return "null".
@@ -136,28 +136,29 @@ def ask_user(text: str):
             messages=[
                 {
                 "role": "user",
-                    "content": f"""
-                    Witaj! Jesteś konsultantem biura podróży. Twoim zadaniem jest uprzejmie zapytać użytkownika w języku polskim o brakujące informacje, 
-                    które nie zostały określone w poniższym formularzu:
+                "content": f"""
+                Hello! You are a travel agency consultant. Your task is to politely ask the user in Polish about missing information 
+                that was not specified in the form below, i.e., any field with a value of null. If any information is already provided 
+                (anything other than null), you should not ask about it:
 
-                    {text}
+                {text}
 
-                    Jeśli użytkownik nie podał konkretnej informacji, możesz zasugerować, że można ją "Do sprecyzowania później". 
-                    Pamiętaj, aby odpowiedzieć uprzejmie i z szacunkiem. Oto pola, które możesz uzupełnić:
+                If the user has not provided specific information, you can suggest that it can be "Specified later." 
+                Remember to respond politely and respectfully. Here are the fields you can complete:
 
-                    1. **Cena**: Czy masz określony budżet? Jeśli tak, jaka jest maksymalna cena podróży? 
-                    2. **Kraj docelowy**: Do jakiego kraju chciał(a)byś podróżować?
-                    3. **Miasto docelowe**: Czy masz na myśli konkretne miasto?
-                    4. **Data wyjazdu**: Kiedy chciał(a)byś wyjechać? Format: DD/MM/RR.
-                    5. **Data powrotu**: Kiedy planujesz powrót? Format: DD/MM/RR.
-                    6. **Miasto wylotu**: Z jakiego miasta chciał(a)byś wylecieć?
-                    7. **Bagaż**: Czy planujesz zabrać bagaż? Jeśli tak, ile sztuk?
-                    8. **Tagi**: Jakie są Twoje preferencje dotyczące wycieczki (np. zwiedzanie, ciepłe kraje, góry)?
+                1. **Price**: Do you have a specific budget? If so, what is the maximum price for your trip? 
+                2. **Destination country**: Which country would you like to travel to?
+                3. **Destination city**: Do you have a specific city in mind?
+                4. **Departure date**: When would you like to depart? Format: DD/MM/YY.
+                5. **Return date**: When do you plan to return? Format: DD/MM/YY.
+                6. **Departure city**: From which city would you like to depart?
+                7. **Baggage**: Do you plan to bring baggage? If so, how many pieces?
+                8. **Tags**: What are your preferences for the trip (e.g., sightseeing, warm countries, mountains)?
 
-                    Jeśli użytkownik nie ma precyzyjnych informacji, odpowiedz: "Do sprecyzowania później".
-                    Zawsze bądź pomocny/a i uprzejmy/a!
-                    """,
-                }
+                If the user does not have precise information, respond with: "Can be specified later." Do not mention **Price** or **Destination country** explicitly; just ask about it if the information is missing. 
+                Always be helpful and polite!
+                """,
+            }
             ],
             model="gpt-4o-mini",
         )
@@ -200,8 +201,8 @@ def second_encounter(text: str, existing_preferences: dict):
         - **Departure Date**:The starting date for the trip, provided in the format DD/MM/YY. If any of it not mentioned, return for day - 01, for month - 01 and year 2025.
         - **Return Date**:The ending date for the trip, provided in the format DD/MM/YY. If not mentioned, return for day - 01, for month - 12 and year 2025.
         - **Departure City**
-        - **Baggage**
-        - **Number of Baggage**
+        - **Baggage**: Whether the user is taking baggage. Format should be True/False. If specified that user dont take baggage return False and put 0 in Number of Baggage .If not mentioned, return "null".
+        - **Number of Baggage**:The number of baggage items, given as a number (e.g., 1, 2, 3). If not mentioned, return "null".
         - **Tags**
 
         Return only the updated JSON object, e.g.:

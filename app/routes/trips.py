@@ -12,6 +12,7 @@ import google.api_core.exceptions
 from typing import Dict
 
 
+
 # Set up logging for debugging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -176,10 +177,13 @@ async def search_trips(text: str):
 
 
 @router.get("/ask_question")
-async def search_trips(text: str):
+async def search_trips():
     try:
         # Extract information from the user's text
-        extracted_info = ask_user(text)
+        
+        logger.debug("PREFERENCEJ",user_preferences)
+        
+        extracted_info = ask_user(user_preferences)
 
 
         return extracted_info
@@ -228,3 +232,6 @@ async def change_trip_filter(text: str):
     except Exception as e:
         logger.error("Unexpected error: %s", str(e))
         return {"error": "An unexpected error occurred."}
+
+
+

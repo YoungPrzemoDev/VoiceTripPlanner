@@ -18,8 +18,8 @@ def send_email(to_email: str, subject: str, body: str):
     # Email credentials
     SMTP_SERVER = "smtp.gmail.com"
     SMTP_PORT = 587
-    SMTP_USERNAME = os.environ.get("username")
-    SMTP_PASSWORD = os.environ.get("userpassy")
+    SMTP_USERNAME = os.environ.get("SMTP_USERNAME")
+    SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD")
 
     try:
         # Create the email
@@ -43,50 +43,31 @@ def send_email(to_email: str, subject: str, body: str):
 # Endpoint to send trip offers via email
 @router.post("/send-trip-offer")
 async def send_trip_offer(email: str, trip_data: dict):
-    """
-    Send a trip offer to the user's email.
-
-    Parameters:
-        email (str): Recipient's email address.
-        trip_data (dict): Details about the trip.
-
-    Example trip_data:
-    {
-        "destination_country": "France",
-        "destination_city": "Paris",
-        "price": 1500,
-        "departure_date": "10/05/2025",
-        "return_date": "20/05/2025",
-        "departure_city": "New York",
-        "tags": ["sightseeing", "romantic"]
-    }
-    """
     try:
         # Prepare the email content
-        subject = "Your Exclusive Trip Offer!"
+        subject = "Ekskluzywna Oferta Wycieczki!"
         template = Template("""
-        <h1>Trip Offer Details</h1>
-        <p>Dear Customer,</p>
-        <p>We are excited to share this exclusive trip offer with you:</p>
+        <h1>Szczegóły Oferty Wycieczki</h1>
+        <p>Szanowny Kliencie,</p>
+        <p>Z przyjemnością przedstawiamy ekskluzywną ofertę wycieczki specjalnie dla Ciebie:</p>
         <ul>
-            <li><b>Destination Country:</b> {{ destination_country }}</li>
-            <li><b>Destination City:</b> {{ destination_city }}</li>
-            <li><b>Price:</b> ${{ price }}</li>
-            <li><b>Departure Date:</b> {{ departure_date }}</li>
-            <li><b>Return Date:</b> {{ return_date }}</li>
-            <li><b>Departure City:</b> {{ departure_city }}</li>
-            <li><b>Tags:</b> {{ tags | join(", ") }}</li>
+            <li><b>Kraj docelowy:</b> {{ destination_country }}</li>
+            <li><b>Miasto docelowe:</b> {{ destination_city }}</li>
+            <li><b>Cena:</b> {{ price }} PLN</li>
+            <li><b>Data wyjazdu:</b> {{ departure_date }}</li>
+            <li><b>Data powrotu:</b> {{ return_date }}</li>
+            <li><b>Miasto wylotu:</b> {{ departure_city }}</li>
         </ul>
-        <p>We hope this offer meets your expectations. Feel free to contact us for any queries.</p>
-        <p>Best regards,<br>Travel Agency Team</p>
+        <p>Mamy nadzieję, że ta oferta spełni Twoje oczekiwania. W razie jakichkolwiek pytań zapraszamy do kontaktu.</p>
+        <p>Z poważaniem,<br>Zespół Biura Podróży</p>
         """)
         body = template.render(
-            destination_country=trip_data.get("destination_country", "N/A"),
-            destination_city=trip_data.get("destination_city", "N/A"),
-            price=trip_data.get("price", "N/A"),
-            departure_date=trip_data.get("departure_date", "N/A"),
-            return_date=trip_data.get("return_date", "N/A"),
-            departure_city=trip_data.get("departure_city", "N/A"),
+            destination_country=trip_data.get("destination_country", "Brak danych"),
+            destination_city=trip_data.get("destination_city", "Brak danych"),
+            price=trip_data.get("price", "Brak danych"),
+            departure_date=trip_data.get("departure_date", "Brak danych"),
+            return_date=trip_data.get("return_date", "Brak danych"),
+            departure_city=trip_data.get("departure_city", "Brak danych"),
             tags=trip_data.get("tags", [])
         )
 
