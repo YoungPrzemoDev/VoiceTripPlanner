@@ -138,7 +138,7 @@ def ask_user(text: str):
                 "role": "user",
                     "content": f"""
                     Witaj! Jesteś konsultantem biura podróży. Twoim zadaniem jest uprzejmie zapytać użytkownika w języku polskim o brakujące informacje, 
-                    które nie zostały określone w poniższym formularzu oraz czy chcaiułby cos zmienic:
+                    które nie zostały określone w poniższym formularzu:
 
                     {text}
 

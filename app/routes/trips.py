@@ -7,7 +7,6 @@ from app.routes.Chater import first_encounter,ask_user,second_encounter
 from google.cloud.firestore_v1 import SERVER_TIMESTAMP
 from openai import OpenAI
 from app.database import db
-from app.models import Trip, VoiceCommand
 import logging
 import google.api_core.exceptions
 from typing import Dict
